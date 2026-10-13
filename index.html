@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goal Planner</title>
+<style>
+/* =========================================================
+   THEME TOKENS
+   Light theme is the default; dark theme overrides the same
+   variables when <html data-theme="dark"> is set.
+   ========================================================= */
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f7;
+  --border: #e3e6ee;
+  --text: #1f2430;
+  --text-muted: #6b7280;
+  --primary: #5b6cf0;
+  --primary-soft: #e8ebfd;
+  --primary-text: #ffffff;
+  --success: #22a06b;
+  --success-soft: #e3f5ec;
+  --danger: #e5484d;
+  --danger-soft: #fdecec;
+  --warning: #d98a0b;
+  --warning-soft: #fdf3e1;
+  --high: #e5484d;
+  --medium: #d98a0b;
+  --low: #22a06b;
+  --shadow: 0 1px 2px rgba(20, 24, 40, .04), 0 4px 16px rgba(20, 24, 40, .06);
+  --radius: 16px;
+  --radius-sm: 10px;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #12141b;
+  --surface: #1b1e27;
+  --surface-2: #242834;
+  --border: #2e3340;
+  --text: #e8eaf0;
+  --text-muted: #9aa1b2;
+  --primary: #7d8bff;
+  --primary-soft: #262b4a;
+  --primary-text: #0f1220;
+  --success: #3ccf8e;
+  --success-soft: #173126;
+  --danger: #ff6b70;
+  --danger-soft: #3a1d20;
+  --warning: #f2b14a;
+  --warning-soft: #3a2d15;
+  --high: #ff6b70;
+  --medium: #f2b14a;
+  --low: #3ccf8e;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  font-size: 15px;
+  transition: background .2s, color .2s;
+}
+.container { max-width: 960px; margin: 0 auto; padding: 16px 16px 64px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { margin: 0; line-height: 1.25; }
+.muted { color: var(--text-muted); }
+.hidden { display: none !important; }
+
+/* =========================================================
+   BUTTONS & FORM CONTROLS
+   ========================================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
+.btn-primary:hover { background: var(--primary); filter: brightness(1.08); }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
+.btn-icon {
+  border: none; background: transparent; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-muted); flex-shrink: 0;
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--text); }
+.btn-icon.danger:hover { background: var(--danger-soft); color: var(--danger); }
+.btn-icon svg { width: 18px; height: 18px; }
+
+.input, .select, .textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.textarea { resize: vertical; min-height: 70px; }
+label.field { display: block; margin-bottom: 14px; }
+label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.brand h1 { font-size: 24px; }
+.brand p { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.stat .label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.stat .value { font-size: 26px; font-weight: 700; margin-top: 2px; }
+.stat .sub { font-size: 12px; color: var(--text-muted); }
+.stat.overdue .value { color: var(--danger); }
+.stat.streak .value { color: var(--warning); }
+.stat.progress-stat { grid-column: span 2; }
+.stat .progress { margin-top: 8px; }
+
+/* =========================================================
+   TOOLBAR (search / filter / sort)
+   ========================================================= */
+.toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.toolbar-top { display: flex; gap: 10px; margin-bottom: 10px; }
+.search-wrap { position: relative; flex: 1; }
+.search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted); pointer-events: none; }
+.search-wrap .input { padding-left: 36px; }
+.filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.filters .select { padding: 8px 10px; font-size: 14px; }
+
+/* =========================================================
+   GOAL CARDS
+   ========================================================= */
+.goal-list { display: flex; flex-direction: column; gap: 14px; }
+.goal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.goal.p-High { border-left-color: var(--high); }
+.goal.p-Medium { border-left-color: var(--medium); }
+.goal.p-Low { border-left-color: var(--low); }
+.goal.is-overdue { background: linear-gradient(0deg, var(--danger-soft), var(--danger-soft)) top / 100% 4px no-repeat, var(--surface); border-color: var(--danger); border-left-color: var(--danger); }
+.goal.is-complete .goal-title { text-decoration: line-through; color: var(--text-muted); }
+
+.goal-head { display: flex; gap: 10px; padding: 16px; cursor: pointer; align-items: flex-start; }
+.chevron { transition: transform .2s; margin-top: 1px; }
+.goal.open .chevron { transform: rotate(90deg); }
+.goal-main { flex: 1; min-width: 0; }
+.goal-title { font-size: 17px; font-weight: 650; word-break: break-word; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.badge {
+  font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-muted);
+}
+.badge.cat { background: var(--primary-soft); color: var(--primary); }
+.badge.pr-High { background: var(--danger-soft); color: var(--high); }
+.badge.pr-Medium { background: var(--warning-soft); color: var(--medium); }
+.badge.pr-Low { background: var(--success-soft); color: var(--low); }
+.badge.done { background: var(--success-soft); color: var(--success); }
+.badge.late { background: var(--danger); color: #fff; }
+.goal-meta { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+.goal-meta .date.late { color: var(--danger); font-weight: 600; }
+.goal-actions { display: flex; gap: 2px; }
+
+/* Progress bar */
+.progress-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.progress { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width .3s; }
+.progress.full > div { background: var(--success); }
+.pct { font-size: 13px; font-weight: 700; min-width: 40px; text-align: right; }
+
+/* Expanded body */
+.goal-body { padding: 0 16px 16px 50px; }
+.goal-desc { margin: 0 0 12px; white-space: pre-wrap; word-break: break-word; }
+.why {
+  background: var(--warning-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px; margin-bottom: 14px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.why strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--warning); margin-bottom: 2px; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; margin: 4px 0 8px; }
+
+/* Tasks */
+.tasks { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.task {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid transparent;
+}
+.task.is-overdue { background: var(--danger-soft); border-color: var(--danger); }
+.task.match { border-color: var(--primary); }
+.task input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--success); cursor: pointer; flex-shrink: 0; }
+.task-text { flex: 1; min-width: 0; word-break: break-word; }
+.task.done .task-title { text-decoration: line-through; color: var(--text-muted); }
+.task-due { display: block; font-size: 12px; color: var(--text-muted); }
+.task.is-overdue .task-due { color: var(--danger); font-weight: 600; }
+.task-due.today { color: var(--warning); font-weight: 600; }
+.add-task { display: flex; gap: 8px; }
+.add-task .input[type="text"] { flex: 1; }
+.add-task .input[type="date"] { width: 150px; }
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+.empty {
+  text-align: center; padding: 48px 20px;
+  background: var(--surface); border: 2px dashed var(--border);
+  border-radius: var(--radius); color: var(--text-muted);
+}
+.empty .emoji { font-size: 42px; margin-bottom: 8px; }
+.empty h3 { color: var(--text); margin-bottom: 6px; }
+.empty .btn { margin-top: 14px; }
+.empty-small { font-size: 14px; color: var(--text-muted); padding: 8px 2px 12px; }
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(10, 12, 20, .5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; z-index: 50;
+  animation: fade .15s ease;
+}
+.modal {
+  background: var(--surface); border-radius: var(--radius);
+  width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto;
+  padding: 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  animation: pop .18s ease;
+}
+.modal.small { max-width: 400px; }
+.modal h2 { font-size: 19px; margin-bottom: 16px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: var(--text); color: var(--bg);
+  padding: 10px 18px; border-radius: 999px; font-size: 14px; font-weight: 500;
+  z-index: 60; box-shadow: var(--shadow);
+  max-width: calc(100vw - 32px); text-align: center;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 720px) {
+  .filters { grid-template-columns: 1fr 1fr; }
+  .filters .select:last-child { grid-column: span 2; }
+}
+@media (max-width: 560px) {
+  .container { padding: 14px 12px 64px; }
+  .brand h1 { font-size: 21px; }
+  .header-actions { width: 100%; }
+  .header-actions .btn { flex: 1; padding: 8px 8px; }
+  .btn-label { display: none; }
+  .stat.progress-stat { grid-column: 1 / -1; }
+  .dashboard { grid-template-columns: 1fr 1fr; }
+  .toolbar-top { flex-direction: column; }
+  .goal-head { padding: 14px 12px; }
+  .goal-body { padding: 0 12px 14px; }
+  .row { grid-template-columns: 1fr; gap: 0; }
+  .add-task { flex-wrap: wrap; }
+  .add-task .input[type="text"] { flex-basis: 100%; }
+  .add-task .input[type="date"] { flex: 1; width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===== Header ===== -->
+  <header class="header">
+    <div class="brand">
+      <h1>🎯 Goal Planner</h1>
+      <p>Plan your goals, break them into tasks, track your progress.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="themeBtn" title="Toggle light/dark mode">
+        <span id="themeIcon">🌙</span><span class="btn-label" id="themeLabel">Dark</span>
+      </button>
+      <button class="btn" id="exportBtn" title="Download all data as JSON">⬇️<span class="btn-label">Export</span></button>
+      <button class="btn" id="importBtn" title="Restore data from a JSON file">⬆️<span class="btn-label">Import</span></button>
+      <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+    </div>
+  </header>
+
+  <!-- ===== Dashboard ===== -->
+  <section class="dashboard" id="dashboard" aria-label="Dashboard"></section>
+
+  <!-- ===== Toolbar: search, filters, sort ===== -->
+  <section class="toolbar" aria-label="Search and filters">
+    <div class="toolbar-top">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" class="input" id="search" placeholder="Search goals and tasks…" aria-label="Search">
+      </div>
+      <button class="btn btn-primary" id="addGoalBtn">＋ Add goal</button>
+    </div>
+    <div class="filters">
+      <select class="select" id="fCategory" aria-label="Filter by category"></select>
+      <select class="select" id="fPriority" aria-label="Filter by priority"></select>
+      <select class="select" id="fLevel" aria-label="Filter by level"></select>
+      <select class="select" id="fStatus" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+      </select>
+      <select class="select" id="sortBy" aria-label="Sort goals">
+        <option value="created">Sort: Newest</option>
+        <option value="due">Sort: Due date</option>
+        <option value="priority">Sort: Priority</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ===== Goal list ===== -->
+  <main class="goal-list" id="goalList"></main>
+</div>
+
+<!-- ===== Goal modal (add / edit) ===== -->
+<div class="modal-backdrop hidden" id="goalModal">
+  <form class="modal" id="goalForm" autocomplete="off">
+    <h2 id="goalModalTitle">Add goal</h2>
+    <label class="field"><span>Title *</span>
+      <input class="input" name="title" required maxlength="120" placeholder="e.g. Run a half marathon">
+    </label>
+    <label class="field"><span>Description</span>
+      <textarea class="textarea" name="description" maxlength="1000" placeholder="What does success look like?"></textarea>
+    </label>
+    <label class="field"><span>💡 Why this matters</span>
+      <textarea class="textarea" name="why" maxlength="1000" placeholder="Your motivation — read this when it gets hard."></textarea>
+    </label>
+    <div class="row">
+      <label class="field"><span>Category</span><select class="select" name="category"></select></label>
+      <label class="field"><span>Priority</span><select class="select" name="priority"></select></label>
+    </div>
+    <div class="row">
+      <label class="field"><span>Level</span><select class="select" name="level"></select></label>
+      <label class="field"><span>Target date</span><input class="input" type="date" name="targetDate"></label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save goal</button>
+    </div>
+  </form>
+</div>
+
+<!-- ===== Task modal (edit) ===== -->
+<div class="modal-backdrop hidden" id="taskModal">
+  <form class="modal small" id="taskForm" autocomplete="off">
+    <h2>Edit task</h2>
+    <label class="field"><span>Task *</span>
+      <input class="input" name="title" required maxlength="200">
+    </label>
+    <label class="field"><span>Due date (optional)</span>
+      <input class="input" type="date" name="dueDate">
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save task</button>
+    </div>
+  </form>
+</div>
+
+<!-- ===== Confirm modal ===== -->
+<div class="modal-backdrop hidden" id="confirmModal">
+  <div class="modal small" role="alertdialog" aria-modal="true">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p class="muted" id="confirmText" style="margin-top:-6px"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONSTANTS
+   ========================================================= */
+const STORAGE_KEY = 'goalPlanner.data.v1';
+const THEME_KEY = 'goalPlanner.theme';
+const CATEGORIES = ['Career', 'Health', 'Family', 'Finance', 'Personal Growth', 'Lifestyle', 'Other'];
+const PRIORITIES = ['High', 'Medium', 'Low'];
+const LEVELS = ['Life goal', 'Long-term', 'Short-term'];
+const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+
+// Small inline SVG icons used in the cards
+const ICONS = {
+  chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>'
+};
+
+/* =========================================================
+   STATE
+   state.goals    -> array of goal objects (each with tasks[])
+   state.activity -> { 'YYYY-MM-DD': number of tasks completed that day }
+   ========================================================= */
+let state = { goals: [], activity: {} };
+
+// UI-only state (not saved)
+const ui = { editingGoalId: null, editingTask: null, confirmAction: null };
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+/** Unique-ish id for goals and tasks. */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+/** Local date as 'YYYY-MM-DD' (avoids UTC off-by-one issues). */
+function dateKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+const today = () => dateKey();
+
+/** Format 'YYYY-MM-DD' into a friendly label like "Oct 13, 2026". */
+function formatDate(str) {
+  if (!str) return '';
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Escape user text before inserting it into HTML. */
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/** Fill a <select> with options. */
+function fillSelect(el, values, allLabel) {
+  el.innerHTML = (allLabel ? `<option value="">${allLabel}</option>` : '') +
+    values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => t.classList.add('hidden'), 2200);
+}
+
+/* =========================================================
+   GOAL / TASK DERIVED DATA
+   ========================================================= */
+/** Progress 0–100 based on completed tasks. */
+function goalProgress(goal) {
+  if (!goal.tasks.length) return 0;
+  return Math.round(goal.tasks.filter(t => t.done).length / goal.tasks.length * 100);
+}
+/** A goal is completed when it has tasks and all of them are done. */
+const isGoalComplete = goal => goal.tasks.length > 0 && goal.tasks.every(t => t.done);
+const isTaskOverdue = task => !task.done && task.dueDate && task.dueDate < today();
+const isGoalOverdue = goal => !isGoalComplete(goal) && goal.targetDate && goal.targetDate < today();
+
+/* =========================================================
+   PERSISTENCE (localStorage)
+   ========================================================= */
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { showToast('⚠️ Could not save — storage may be full or blocked.'); }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = normalizeData(JSON.parse(raw));
+  } catch (e) {
+    console.warn('Could not load saved data', e);
+  }
+}
+
+/**
+ * Validate and clean data (used for both loading and importing).
+ * Missing/invalid fields fall back to safe defaults. Throws if the
+ * shape is completely wrong.
+ */
+function normalizeData(data) {
+  if (!data || !Array.isArray(data.goals)) throw new Error('Invalid data format');
+  const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const goals = data.goals.filter(g => g && typeof g === 'object').map(g => ({
+    id: String(g.id || uid()),
+    title: String(g.title || 'Untitled goal'),
+    description: String(g.description || ''),
+    why: String(g.why || ''),
+    category: CATEGORIES.includes(g.category) ? g.category : 'Other',
+    priority: PRIORITIES.includes(g.priority) ? g.priority : 'Medium',
+    level: LEVELS.includes(g.level) ? g.level : 'Short-term',
+    targetDate: isDate(g.targetDate) ? g.targetDate : '',
+    createdAt: Number(g.createdAt) || Date.now(),
+    open: !!g.open,
+    tasks: (Array.isArray(g.tasks) ? g.tasks : []).filter(t => t && typeof t === 'object').map(t => ({
+      id: String(t.id || uid()),
+      title: String(t.title || 'Untitled task'),
+      dueDate: isDate(t.dueDate) ? t.dueDate : '',
+      done: !!t.done,
+      completedOn: isDate(t.completedOn) ? t.completedOn : ''
+    }))
+  }));
+  const activity = {};
+  if (data.activity && typeof data.activity === 'object') {
+    for (const [k, v] of Object.entries(data.activity)) {
+      if (isDate(k) && Number(v) > 0) activity[k] = Number(v);
+    }
+  }
+  return { goals, activity };
+}
+
+/* =========================================================
+   STREAK TRACKING
+   Each time a task is checked off we bump today's counter in
+   state.activity; unchecking a task completed today reverses it.
+   ========================================================= */
+function recordCompletion(task, done) {
+  if (done) {
+    task.completedOn = today();
+    state.activity[task.completedOn] = (state.activity[task.completedOn] || 0) + 1;
+  } else {
+    // Only undo the activity if it was completed today (past days stay earned)
+    if (task.completedOn === today() && state.activity[task.completedOn]) {
+      state.activity[task.completedOn]--;
+      if (!state.activity[task.completedOn]) delete state.activity[task.completedOn];
+    }
+    task.completedOn = '';
+  }
+}
+
+/** Consecutive days (ending today, or yesterday if nothing yet today). */
+function currentStreak() {
+  const d = new Date();
+  if (!state.activity[dateKey(d)]) d.setDate(d.getDate() - 1); // today not done yet — streak still alive
+  let streak = 0;
+  while (state.activity[dateKey(d)]) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+/** Longest streak ever recorded. */
+function bestStreak() {
+  const days = Object.keys(state.activity).sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of days) {
+    if (prev) {
+      const p = new Date(prev + 'T00:00:00');
+      p.setDate(p.getDate() + 1);
+      run = dateKey(p) === k ? run + 1 : 1;
+    } else run = 1;
+    best = Math.max(best, run);
+    prev = k;
+  }
+  return best;
+}
+
+/* =========================================================
+   RENDERING — DASHBOARD
+   ========================================================= */
+function renderDashboard() {
+  const goals = state.goals;
+  const allTasks = goals.flatMap(g => g.tasks);
+  const completedGoals = goals.filter(isGoalComplete).length;
+  const dueToday = allTasks.filter(t => !t.done && t.dueDate === today()).length;
+  const overdue = allTasks.filter(isTaskOverdue).length;
+  const doneTasks = allTasks.filter(t => t.done).length;
+  const overall = allTasks.length ? Math.round(doneTasks / allTasks.length * 100) : 0;
+  const streak = currentStreak();
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="stat"><div class="label">Total goals</div><div class="value">${goals.length}</div></div>
+    <div class="stat"><div class="label">Completed</div><div class="value" style="color:var(--success)">${completedGoals}</div><div class="sub">goals done</div></div>
+    <div class="stat"><div class="label">Due today</div><div class="value">${dueToday}</div><div class="sub">open tasks</div></div>
+    <div class="stat overdue"><div class="label">Overdue</div><div class="value">${overdue}</div><div class="sub">tasks</div></div>
+    <div class="stat streak"><div class="label">Streak</div><div class="value">🔥 ${streak}</div><div class="sub">day${streak === 1 ? '' : 's'} · best ${bestStreak()}</div></div>
+    <div class="stat progress-stat">
+      <div class="label">Overall progress</div>
+      <div class="progress-row" style="margin-top:6px">
+        <div class="progress ${overall === 100 ? 'full' : ''}"><div style="width:${overall}%"></div></div>
+        <span class="pct">${overall}%</span>
+      </div>
+      <div class="sub">${doneTasks} of ${allTasks.length} tasks completed</div>
+    </div>`;
+}
+
+/* =========================================================
+   RENDERING — FILTER / SEARCH / SORT
+   ========================================================= */
+function getFilters() {
+  return {
+    q: document.getElementById('search').value.trim().toLowerCase(),
+    category: document.getElementById('fCategory').value,
+    priority: document.getElementById('fPriority').value,
+    level: document.getElementById('fLevel').value,
+    status: document.getElementById('fStatus').value,
+    sort: document.getElementById('sortBy').value
+  };
+}
+
+/** Returns visible goals plus which task ids match the search. */
+function getVisibleGoals(f) {
+  const matchedTasks = new Set();
+  let list = state.goals.filter(g => {
+    if (f.category && g.category !== f.category) return false;
+    if (f.priority && g.priority !== f.priority) return false;
+    if (f.level && g.level !== f.level) return false;
+    if (f.status === 'completed' && !isGoalComplete(g)) return false;
+    if (f.status === 'active' && isGoalComplete(g)) return false;
+    if (f.q) {
+      const goalHit = [g.title, g.description, g.why].some(s => s.toLowerCase().includes(f.q));
+      const taskHits = g.tasks.filter(t => t.title.toLowerCase().includes(f.q));
+      taskHits.forEach(t => matchedTasks.add(t.id));
+      if (!goalHit && !taskHits.length) return false;
+    }
+    return true;
+  });
+
+  // Sorting (copy so the saved order is not changed)
+  list = [...list];
+  if (f.sort === 'due') {
+    // Goals without a target date go last
+    list.sort((a, b) => (a.targetDate || '9999-99-99').localeCompare(b.targetDate || '9999-99-99'));
+  } else if (f.sort === 'priority') {
+    list.sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      (a.targetDate || '9999').localeCompare(b.targetDate || '9999'));
+  } else {
+    list.sort((a, b) => b.createdAt - a.createdAt);
+  }
+  return { list, matchedTasks };
+}
+
+/* =========================================================
+   RENDERING — GOAL LIST
+   ========================================================= */
+function renderGoals() {
+  const container = document.getElementById('goalList');
+  const f = getFilters();
+
+  // Empty state: no goals at all
+  if (!state.goals.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="emoji">🌱</div>
+        <h3>No goals yet. Add your first one!</h3>
+        <p>Big dreams start with a single step.</p>
+        <button class="btn btn-primary" data-action="add-goal">＋ Add your first goal</button>
+      </div>`;
+    return;
+  }
+
+  const { list, matchedTasks } = getVisibleGoals(f);
+
+  // Empty state: filters/search hide everything
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="emoji">🔍</div>
+        <h3>No matching goals</h3>
+        <p>Try a different search term or clear your filters.</p>
+        <button class="btn" data-action="clear-filters">Clear filters</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(g => goalCardHTML(g, matchedTasks, !!f.q)).join('');
+}
+
+/** Build the HTML for one goal card. */
+function goalCardHTML(g, matchedTasks, searching) {
+  const pct = goalProgress(g);
+  const complete = isGoalComplete(g);
+  const overdue = isGoalOverdue(g);
+  const doneCount = g.tasks.filter(t => t.done).length;
+  // While searching, auto-expand goals that have matching tasks
+  const open = g.open || (searching && g.tasks.some(t => matchedTasks.has(t.id)));
+
+  const classes = ['goal', `p-${g.priority}`, open && 'open', complete && 'is-complete', overdue && 'is-overdue']
+    .filter(Boolean).join(' ');
+
+  return `
+  <article class="${classes}" data-goal="${esc(g.id)}">
+    <div class="goal-head" data-action="toggle" role="button" tabindex="0" aria-expanded="${open}">
+      <span class="btn-icon chevron" aria-hidden="true">${ICONS.chevron}</span>
+      <div class="goal-main">
+        <div class="goal-title">${esc(g.title)}</div>
+        <div class="badges">
+          <span class="badge cat">${esc(g.category)}</span>
+          <span class="badge pr-${g.priority}">${esc(g.priority)}</span>
+          <span class="badge">${esc(g.level)}</span>
+          ${complete ? '<span class="badge done">✓ Completed</span>' : ''}
+          ${overdue ? '<span class="badge late">Overdue</span>' : ''}
+        </div>
+        <div class="progress-row">
+          <div class="progress ${pct === 100 ? 'full' : ''}"><div style="width:${pct}%"></div></div>
+          <span class="pct">${pct}%</span>
+        </div>
+        <div class="goal-meta">
+          <span>${doneCount}/${g.tasks.length} tasks</span>
+          ${g.targetDate ? `<span class="date ${overdue ? 'late' : ''}">📅 ${overdue ? 'Was due' : 'Target'} ${formatDate(g.targetDate)}</span>` : ''}
+        </div>
+      </div>
+      <div class="goal-actions">
+        <button class="btn-icon" data-action="edit-goal" title="Edit goal" aria-label="Edit goal">${ICONS.edit}</button>
+        <button class="btn-icon danger" data-action="delete-goal" title="Delete goal" aria-label="Delete goal">${ICONS.trash}</button>
+      </div>
+    </div>
+    ${open ? goalBodyHTML(g, matchedTasks) : ''}
+  </article>`;
+}
+
+/** Expanded section: description, why, tasks, add-task form. */
+function goalBodyHTML(g, matchedTasks) {
+  const tasksHTML = g.tasks.length
+    ? `<ul class="tasks">${g.tasks.map(t => taskHTML(t, matchedTasks.has(t.id))).join('')}</ul>`
+    : `<div class="empty-small">No tasks yet — break this goal into small steps below. ✨</div>`;
+
+  return `
+    <div class="goal-body">
+      ${g.description ? `<p class="goal-desc">${esc(g.description)}</p>` : ''}
+      ${g.why ? `<div class="why"><strong>💡 Why this matters</strong>${esc(g.why)}</div>` : ''}
+      <div class="section-title">Tasks</div>
+      ${tasksHTML}
+      <form class="add-task" data-action="add-task" autocomplete="off">
+        <input class="input" type="text" name="title" placeholder="Add a task…" maxlength="200" required aria-label="New task">
+        <input class="input" type="date" name="dueDate" aria-label="Task due date (optional)" title="Due date (optional)">
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+    </div>`;
+}
+
+function taskHTML(t, isMatch) {
+  const overdue = isTaskOverdue(t);
+  const isToday = !t.done && t.dueDate === today();
+  let dueLabel = '';
+  if (t.dueDate) {
+    dueLabel = overdue ? `⚠️ Overdue · ${formatDate(t.dueDate)}`
+      : isToday ? '⏰ Due today'
+      : `Due ${formatDate(t.dueDate)}`;
+  }
+  const classes = ['task', t.done && 'done', overdue && 'is-overdue', isMatch && 'match'].filter(Boolean).join(' ');
+  return `
+    <li class="${classes}" data-task="${esc(t.id)}">
+      <input type="checkbox" data-action="toggle-task" ${t.done ? 'checked' : ''} aria-label="Mark task complete">
+      <div class="task-text">
+        <span class="task-title">${esc(t.title)}</span>
+        ${dueLabel ? `<span class="task-due ${isToday ? 'today' : ''}">${dueLabel}</span>` : ''}
+      </div>
+      <button class="btn-icon" data-action="edit-task" title="Edit task" aria-label="Edit task">${ICONS.edit}</button>
+      <button class="btn-icon danger" data-action="delete-task" title="Delete task" aria-label="Delete task">${ICONS.trash}</button>
+    </li>`;
+}
+
+/** Re-render everything that depends on state. */
+function render() {
+  renderDashboard();
+  renderGoals();
+}
+
+/** Save + render in one go after any data change. */
+function commit() {
+  save();
+  render();
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+function openModal(id) {
+  const m = document.getElementById(id);
+  m.classList.remove('hidden');
+  const first = m.querySelector('input, textarea, select, button.btn-danger');
+  if (first) setTimeout(() => first.focus(), 30);
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+/** Custom confirmation dialog — runs onConfirm only if the user clicks the danger button. */
+function confirmDialog(title, text, onConfirm, okLabel = 'Delete') {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  document.getElementById('confirmOk').textContent = okLabel;
+  ui.confirmAction = onConfirm;
+  openModal('confirmModal');
+}
+
+/** Open the goal form, pre-filled when editing. */
+function openGoalForm(goal = null) {
+  const form = document.getElementById('goalForm');
+  form.reset();
+  ui.editingGoalId = goal ? goal.id : null;
+  document.getElementById('goalModalTitle').textContent = goal ? 'Edit goal' : 'Add goal';
+  const v = goal || { title: '', description: '', why: '', category: 'Personal Growth', priority: 'Medium', level: 'Short-term', targetDate: '' };
+  for (const key of ['title', 'description', 'why', 'category', 'priority', 'level', 'targetDate']) {
+    form.elements[key].value = v[key];
+  }
+  openModal('goalModal');
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+const findGoal = id => state.goals.find(g => g.id === id);
+
+function saveGoalFromForm(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = {
+    title: fd.get('title').trim(),
+    description: fd.get('description').trim(),
+    why: fd.get('why').trim(),
+    category: fd.get('category'),
+    priority: fd.get('priority'),
+    level: fd.get('level'),
+    targetDate: fd.get('targetDate')
+  };
+  if (!data.title) return;
+
+  if (ui.editingGoalId) {
+    Object.assign(findGoal(ui.editingGoalId), data);
+    showToast('Goal updated');
+  } else {
+    state.goals.push({ id: uid(), createdAt: Date.now(), open: true, tasks: [], ...data });
+    showToast('Goal added 🎉');
+  }
+  closeModal('goalModal');
+  commit();
+}
+
+function saveTaskFromForm(e) {
+  e.preventDefault();
+  const { goalId, taskId } = ui.editingTask || {};
+  const task = findGoal(goalId)?.tasks.find(t => t.id === taskId);
+  if (!task) return closeModal('taskModal');
+  const fd = new FormData(e.target);
+  const title = fd.get('title').trim();
+  if (!title) return;
+  task.title = title;
+  task.dueDate = fd.get('dueDate');
+  closeModal('taskModal');
+  commit();
+  showToast('Task updated');
+}
+
+/** Central click handler for everything inside the goal list (event delegation). */
+function onListClick(e) {
+  const actionEl = e.target.closest('[data-action]');
+  if (!actionEl) return;
+  const action = actionEl.dataset.action;
+  if (action === 'add-task') return; // handled on submit
+
+  if (action === 'add-goal') return openGoalForm();
+  if (action === 'clear-filters') return clearFilters();
+
+  const goalEl = actionEl.closest('[data-goal]');
+  const goal = goalEl && findGoal(goalEl.dataset.goal);
+  if (!goal) return;
+  const taskEl = actionEl.closest('[data-task]');
+  const task = taskEl && goal.tasks.find(t => t.id === taskEl.dataset.task);
+
+  switch (action) {
+    case 'toggle':
+      goal.open = !goalEl.classList.contains('open');
+      commit();
+      break;
+    case 'edit-goal':
+      e.stopPropagation();
+      openGoalForm(goal);
+      break;
+    case 'delete-goal':
+      e.stopPropagation();
+      confirmDialog('Delete this goal?',
+        `"${goal.title}" and its ${goal.tasks.length} task(s) will be permanently removed.`,
+        () => {
+          state.goals = state.goals.filter(g => g.id !== goal.id);
+          commit();
+          showToast('Goal deleted');
+        });
+      break;
+    case 'toggle-task': {
+      const wasComplete = isGoalComplete(goal);
+      task.done = actionEl.checked;
+      recordCompletion(task, task.done);
+      commit();
+      if (!wasComplete && isGoalComplete(goal)) showToast('🏆 Goal completed! Amazing work!');
+      else if (task.done) showToast('Nice! Task done ✅');
+      break;
+    }
+    case 'edit-task': {
+      ui.editingTask = { goalId: goal.id, taskId: task.id };
+      const form = document.getElementById('taskForm');
+      form.elements.title.value = task.title;
+      form.elements.dueDate.value = task.dueDate;
+      openModal('taskModal');
+      break;
+    }
+    case 'delete-task':
+      confirmDialog('Delete this task?', `"${task.title}" will be permanently removed.`, () => {
+        goal.tasks = goal.tasks.filter(t => t.id !== task.id);
+        commit();
+        showToast('Task deleted');
+      });
+      break;
+  }
+}
+
+/** Add-task forms are rendered per goal; handle their submit via delegation. */
+function onListSubmit(e) {
+  const form = e.target.closest('form[data-action="add-task"]');
+  if (!form) return;
+  e.preventDefault();
+  const goal = findGoal(form.closest('[data-goal]').dataset.goal);
+  const title = form.elements.title.value.trim();
+  if (!goal || !title) return;
+  goal.tasks.push({ id: uid(), title, dueDate: form.elements.dueDate.value, done: false, completedOn: '' });
+  commit();
+  // Keep focus in the add-task box so users can add several tasks quickly
+  document.querySelector(`[data-goal="${CSS.escape(goal.id)}"] .add-task input[name="title"]`)?.focus();
+}
+
+function clearFilters() {
+  ['search', 'fCategory', 'fPriority', 'fLevel', 'fStatus'].forEach(id => document.getElementById(id).value = '');
+  renderGoals();
+}
+
+/* =========================================================
+   EXPORT / IMPORT
+   ========================================================= */
+function exportData() {
+  const payload = { app: 'goal-planner', version: 1, exportedAt: new Date().toISOString(), ...state };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `goal-planner-${today()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Data exported');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try {
+      data = normalizeData(JSON.parse(reader.result));
+    } catch (err) {
+      showToast('⚠️ That file is not a valid Goal Planner export.');
+      return;
+    }
+    confirmDialog('Replace all data?',
+      `Importing will replace your current ${state.goals.length} goal(s) with ${data.goals.length} goal(s) from the file. Tip: export first if you want a backup.`,
+      () => {
+        state = data;
+        commit();
+        showToast('Data imported ✅');
+      }, 'Import');
+  };
+  reader.readAsText(file);
+}
+
+/* =========================================================
+   THEME (light / dark)
+   ========================================================= */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  // Button shows the theme you would switch TO
+  document.getElementById('themeIcon').textContent = theme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+}
+
+/* =========================================================
+   INIT & EVENT WIRING
+   ========================================================= */
+function init() {
+  initTheme();
+
+  // Populate select menus
+  fillSelect(document.getElementById('fCategory'), CATEGORIES, 'All categories');
+  fillSelect(document.getElementById('fPriority'), PRIORITIES, 'All priorities');
+  fillSelect(document.getElementById('fLevel'), LEVELS, 'All levels');
+  const gf = document.getElementById('goalForm');
+  fillSelect(gf.elements.category, CATEGORIES);
+  fillSelect(gf.elements.priority, PRIORITIES);
+  fillSelect(gf.elements.level, LEVELS);
+
+  load();
+  render();
+
+  // Header buttons
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', e => {
+    if (e.target.files[0]) importData(e.target.files[0]);
+    e.target.value = ''; // allow re-importing the same file
+  });
+  document.getElementById('addGoalBtn').addEventListener('click', () => openGoalForm());
+
+  // Search / filter / sort
+  document.getElementById('search').addEventListener('input', renderGoals);
+  ['fCategory', 'fPriority', 'fLevel', 'fStatus', 'sortBy'].forEach(id =>
+    document.getElementById(id).addEventListener('change', renderGoals));
+
+  // Goal list (delegated)
+  const list = document.getElementById('goalList');
+  list.addEventListener('click', onListClick);
+  list.addEventListener('submit', onListSubmit);
+  list.addEventListener('keydown', e => {
+    // Keyboard support: Enter/Space on a goal header toggles it
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.goal-head')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  // Forms
+  document.getElementById('goalForm').addEventListener('submit', saveGoalFromForm);
+  document.getElementById('taskForm').addEventListener('submit', saveTaskFromForm);
+
+  // Confirm dialog
+  document.getElementById('confirmOk').addEventListener('click', () => {
+    const fn = ui.confirmAction;
+    ui.confirmAction = null;
+    closeModal('confirmModal');
+    if (fn) fn();
+  });
+
+  // Close modals: Cancel buttons, clicking the backdrop, or pressing Escape
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => {
+      if (e.target === bd || e.target.closest('[data-close]')) bd.classList.add('hidden');
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop').forEach(bd => bd.classList.add('hidden'));
+  });
+
+  // Refresh "today"/overdue labels if the tab stays open past midnight
+  // (only re-renders when the date actually changes, so typing isn't interrupted)
+  let lastDay = today();
+  setInterval(() => {
+    if (today() !== lastDay) { lastDay = today(); render(); }
+  }, 60 * 1000);
+}
+
+init();
+</script>
+</body>
+</html>
